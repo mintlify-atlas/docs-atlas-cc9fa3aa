@@ -1,23 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "Goods Inventory",
+  "projectType": "saas",
+  "projectName": "Goods Inventory",
+  "projectDescription": "A full-stack web application for the Industrial Engineering Department at Universidad de Sonora to manage and audit physical goods inventory across locations, featuring a public lookup interface and a protected admin panel.",
   "theme": "luma",
-  "colors": {
-    "primary": "#003366",
-    "light": "#F5A623",
-    "dark": "#001A33"
-  },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/AndresLopezCorrales/Goods-Inventory"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/AndresLopezCorrales/Goods-Inventory"
-    }
-  },
+  "primaryColor": "#003366",
+  "lightColor": "#F5A623",
+  "darkColor": "#001A33",
   "navigation": {
     "tabs": [
       {
@@ -87,5 +75,29 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "Public responsible-person search with live autocomplete",
+    "Browse assigned locations by responsible person",
+    "View inventory items per location with account numbers",
+    "Submit location revision comments from the public interface",
+    "Admin panel with JWT-based authentication",
+    "Admin search for responsables and ubicaciones",
+    "Admin view of full revision history per location",
+    "Automatic data import from Excel files (areas.xls and articulos.xls)",
+    "MySQL database with SQLAlchemy ORM",
+    "React + Vite frontend with Tailwind CSS"
+  ],
+  "publicApiSurface": [
+    "GET /api/responsables/buscar?q={query}",
+    "GET /api/ubicaciones/{responsable_id}",
+    "GET /api/items/{ubicacion_id}",
+    "POST /api/revisiones",
+    "POST /api/login",
+    "GET /api/admin/responsables/buscar?q={query}",
+    "GET /api/admin/ubicaciones/buscar?q={query}",
+    "GET /api/admin/responsables/{responsable_id}/ubicaciones",
+    "GET /api/admin/items/{ubicacion_id}",
+    "GET /api/admin/locations/{id_location}/revisions"
+  ]
 }

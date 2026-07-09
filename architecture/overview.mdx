@@ -1,0 +1,109 @@
+---
+title: "System Architecture of Goods Inventory"
+sidebarTitle: "Overview"
+description: "Explore how the React frontend, Flask REST API, and MySQL database are structured and communicate in the Goods Inventory system."
+---
+
+Goods Inventory follows a classic three-tier architecture — a React SPA (single-page application) in the browser, a Flask REST API as the middle tier, and a MySQL database as persistent storage. Each tier has a clearly defined responsibility: the frontend handles user interaction and state, the API enforces business logic and authentication, and the database provides durable, relational storage for all inventory data.
+
+## High-level flow
+
+The diagram below traces the path of a typical public lookup — a user searching for a responsible party by name:
+
+<Steps>
+  <Step title="User enters a name in the browser">
+    The React SPA renders the `BuscadorResponsables` component. As the user types, the frontend fires a request to the Flask API.
+  </Step>
+  <Step title="GET /api/responsables/buscar">
+    The request hits the **Home** blueprint. No authentication is required. The query string carries the search term, e.g. `?name=Martinez`.
+  </Step>
+  <Step title="MySQL query executes">
+    SQLAlchemy translates the lookup into a `SELECT` against the `responsible` table, filtering rows whose `name` column matches the search term.
+  </Step>
+  <Step title="JSON response returned">
+    The API serialises the matching rows using each model's `to_dict()` method and returns a JSON array to the browser.
+  </Step>
+  <Step title="UI renders locations">
+    React receives the response, updates component state, and renders the list of matching responsibles along with their associated locations.
+  </Step>
+</Steps>
+
+## Backend structure
+
+The Flask application is bootstrapped inside a `create_app()` factory in `main.py`. On startup it:
+
+1. **Loads `.env` variables** — database credentials, server host, JWT secret, and token expiry are all read from environment variables, keeping secrets out of source control.
+2. **Creates the MySQL database** if it doesn't already exist, using a server-level connection before the app database URI is configured.
+3. **Initialises SQLAlchemy** by binding the `db` instance to the app and calling `db.create_all()` to materialise any missing tables.
+4. **Imports Excel data** — `load_excel_data()` seeds the `areas` and `articulos` tables from bundled `.xls` files on the first run.
+5. **Registers blueprints** — route modules are attached via `register_blueprints()`, keeping the factory function clean.
+6. **Configures CORS and JWT** — all origins are permitted for API routes, and JWT access tokens are issued with a configurable expiry window.
+
+```python main.py
+def create_app():
+    server_uri = f"mysql+pymysql://{name}:{password}@{server}"
+    engine = create_engine(server_uri)
+    with engine.connect() as conn:
+        conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {database}"))
+        conn.commit()
+
+    app = Flask(__name__)
+    CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}},
+         allow_headers=["Content-Type", "Authorization"],
+         expose_headers=["Authorization"])
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{name}:{password}@{server}/{database}"
+    app.config['JWT_SECRET_KEY'] = jwt_secret_key
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=jwt_expires_days)
+    ...
+    with app.app_context():
+        db.create_all()
+        load_excel_data("app/data/areas.xls", "app/data/articulos.xls")
+    register_blueprints(app)
+    return app
+```
+
+## Blueprint organization
+
+Routes are split into two blueprints based on whether they require authentication.
+
+### Home blueprint (public)
+
+These endpoints are accessible without a JWT token and power the read-only public interface:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/responsables/buscar` | Search for responsible parties by name |
+| `GET` | `/api/ubicaciones/{id}` | Retrieve locations for a given responsible |
+| `GET` | `/api/items/{id}` | Retrieve items assigned to a location |
+| `GET` | `/api/revisiones` | List revision records |
+
+### Admin blueprint (JWT-protected)
+
+These endpoints require a valid `Authorization: Bearer <token>` header and are used exclusively by the admin dashboard:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/login` | Authenticate and receive a JWT access token |
+| `GET` | `/api/admin/responsables/buscar` | Admin-scoped responsible search |
+| `GET` | `/api/admin/ubicaciones/buscar` | Admin-scoped location search |
+| `GET` | `/api/admin/responsables/{id}/ubicaciones` | List locations for a specific responsible (admin view) |
+| `PUT` / `DELETE` | `/api/admin/items/{id}` | Modify or remove an item |
+| `GET` / `POST` | `/api/admin/locations/{id}/revisions` | List or create revisions for a location |
+
+## Frontend routing
+
+The React application uses React Router v6 and defines the following client-side routes in `App.jsx`:
+
+| Path | Component | Access |
+|------|-----------|--------|
+| `/` | `BuscadorResponsables` | Public — the main search landing page |
+| `/ubicaciones/:responsableId` | `Ubicaciones` | Public — lists locations for a responsible |
+| `/items/:ubicacionId` | `Items` | Public — lists items within a location |
+| `/admin` | `AdminPage` | Public — login form for administrators |
+| `/dashboard` | `Dashboard` | Protected — admin home after login |
+| `/admin/responsable/:id` | `AdminResponsablesUbicacion` | Protected — manage a responsible's locations |
+| `/admin/ubicacion/:id_location` | `AdminUbicacionRevisiones` | Protected — manage revisions for a location |
+
+<Note>
+  All admin routes (such as `/dashboard`, `/admin/responsable/:id`, and `/admin/ubicacion/:id_location`) check for a JWT token in `localStorage` on mount. If no token is found, the router immediately redirects the user to `/admin` to log in.
+</Note>

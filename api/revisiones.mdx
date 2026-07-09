@@ -1,0 +1,67 @@
+---
+title: "POST /api/revisiones — Submit a Revision Comment"
+sidebarTitle: "Revisiones"
+description: "POST /api/revisiones — record a timestamped revision comment for a storage location. Requires id_location and comment in the JSON body."
+---
+
+This endpoint lets any user record a revision comment for a storage location. The server timestamps the revision automatically and updates the location's `last_revision_date`. It is called at the end of the department member inventory check flow, after the user has reviewed all items at a location.
+
+## Request
+
+**Method:** `POST`  
+**Path:** `/api/revisiones`  
+**Auth:** None  
+**Content-Type:** `application/json`
+
+### Body Parameters
+
+<ParamField body="id_location" type="integer" required>
+  The `id_location` of the storage location being revised. Must correspond to an existing location record.
+</ParamField>
+
+<ParamField body="comment" type="string" required>
+  A free-text comment describing the outcome of the revision (e.g. the condition of items, any discrepancies noted).
+</ParamField>
+
+### Request Example
+
+```bash
+curl -X POST http://localhost:5000/api/revisiones \
+  -H "Content-Type: application/json" \
+  -d '{"id_location": 3, "comment": "Todos los equipos presentes y en buen estado"}'
+```
+
+## Response
+
+### 201 — Created
+
+Returned when the revision is successfully recorded.
+
+<ResponseField name="message" type="string">
+  A confirmation message indicating the revision was saved.
+</ResponseField>
+
+```json
+{ "message": "Revisión registrada correctamente" }
+```
+
+### 400 — Bad Request
+
+Returned when either `id_location` or `comment` is missing from the request body.
+
+<ResponseField name="error" type="string">
+  A description of the validation error.
+</ResponseField>
+
+```json
+{ "error": "id_location y comment son requeridos" }
+```
+
+## Side Effects
+
+Submitting a revision performs two write operations:
+
+1. **Inserts** a new `Revision` record with `id_location`, the provided `comment`, and a server-generated `date_time_revision` timestamp.
+2. **Updates** the corresponding `Location` record, setting `last_revision_date` to the same timestamp.
+
+This means subsequent calls to [`GET /api/ubicaciones/{responsable_id}`](/api/ubicaciones) will reflect the new `last_revision_date` and `last_revision` values for the revised location.

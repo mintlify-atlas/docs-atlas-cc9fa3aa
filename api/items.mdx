@@ -1,0 +1,85 @@
+---
+title: "GET /api/items/{id} — Items at a Location"
+sidebarTitle: "Items"
+description: "GET /api/items/{ubicacion_id} — retrieve the location details and all inventory items (account number + description) for a given storage location."
+---
+
+Retrieve the details of a storage location and all inventory items assigned to it. This public endpoint is called after a user selects a location from the list returned by [`GET /api/ubicaciones/{responsable_id}`](/api/ubicaciones), allowing them to view the complete inventory for that location before submitting a revision.
+
+## Request
+
+**Method:** `GET`  
+**Path:** `/api/items/{ubicacionId}`  
+**Auth:** None
+
+### Path Parameters
+
+<ParamField path="ubicacionId" type="integer" required>
+  The `id_location` of the target storage location. Obtain this value from the `id_location` field in the response of `GET /api/ubicaciones/{responsable_id}`.
+</ParamField>
+
+## Response
+
+### 200 — Success
+
+Returns the location details and a list of all inventory items assigned to that location.
+
+<ResponseField name="ubicacion" type="object | null">
+  Details of the requested storage location. `null` if no location exists for the given `ubicacionId`.
+
+  <Expandable title="ubicacion">
+    <ResponseField name="id_location" type="integer">
+      Unique identifier of the storage location.
+    </ResponseField>
+
+    <ResponseField name="number_location" type="integer">
+      The physical room or area number for this location.
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Human-readable name or description of the location.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="items" type="array">
+  Array of inventory item objects assigned to the location. Returns an empty array `[]` if the location has no items.
+
+  <Expandable title="items[]">
+    <ResponseField name="id_item" type="integer">
+      Unique identifier of the inventory item.
+    </ResponseField>
+
+    <ResponseField name="account_name" type="string">
+      The account number associated with the item (stored as a string to preserve leading zeros).
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Human-readable name or description of the inventory item.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "ubicacion": {
+    "id_location": 3,
+    "number_location": 104,
+    "description": "Laboratorio de Materiales"
+  },
+  "items": [
+    { "id_item": 12, "account_name": "12345678901", "description": "Microscopio Olympus" },
+    { "id_item": 13, "account_name": "98765432100", "description": "Balanza analítica" }
+  ]
+}
+```
+
+<Note>
+  `ubicacion` is `null` when no location record exists for the supplied `ubicacionId`. The `items` array will also be empty in that case.
+</Note>
+
+## Example
+
+```bash
+curl "http://localhost:5000/api/items/3"
+```

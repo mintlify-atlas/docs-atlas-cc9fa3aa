@@ -1,0 +1,52 @@
+---
+title: "Admin Panel: Login, Dashboard, and Inventory Audit"
+sidebarTitle: "Admin Panel"
+description: "Learn how the Goods Inventory admin panel works — from JWT login to searching responsables and locations and reviewing revision history."
+---
+
+The admin panel is a JWT-protected area that gives administrators full visibility into the inventory system — searching by responsible person or location, browsing items, and reviewing audit trails of revision history.
+
+## Logging in
+
+Route `/admin` renders `AdminPage`. The form POSTs `{ name, password }` to `POST /api/login`. On success, the JWT `access_token` is stored in `localStorage` under the key `"token"` and the user is redirected to `/dashboard`.
+
+```javascript AdminPage.jsx
+const response = await fetch(`${API_URL}/api/login`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ name, password }),
+});
+const data = await response.json();
+localStorage.setItem("token", data.access_token);
+navigate("/dashboard");
+```
+
+## Dashboard search
+
+Route `/dashboard` renders `Dashboard`. Admins can toggle between searching by **"Responsables"** or **"Ubicaciones"** using a dropdown. The query is debounced (250ms) and calls either:
+
+- `GET /api/admin/responsables/buscar?q={q}` — returns `[{ id, name }]`
+- `GET /api/admin/ubicaciones/buscar?q={q}` — returns `[{ id_location, number_location, description, ... }]`
+
+All requests include an `Authorization: Bearer {token}` header. A `401` response clears the token from `localStorage` and redirects the user to `/admin`.
+
+## Viewing a responsible's locations
+
+Route `/admin/responsable/:id` renders `AdminResponsablesUbicacion`. It fetches `GET /api/admin/responsables/{id}/ubicaciones` and displays all locations assigned to that responsible person, including the last revision date for each.
+
+## Viewing a location's items and revisions
+
+Route `/admin/ubicacion/:id_location` renders `AdminUbicacionRevisiones`. This page makes two parallel fetches:
+
+- `GET /api/admin/items/{id_location}` — renders an items table with account numbers and descriptions
+- `GET /api/admin/locations/{id_location}/revisions` — renders revision history cards sorted newest first
+
+Together these views give administrators a complete audit trail for any given storage location.
+
+## Token expiry
+
+The JWT token expires after the number of days configured in `JWT_EXPIRES_DAYS` (default: 1 day). When a `401` is received on any admin request, the frontend clears `localStorage` and redirects back to the login page at `/admin`.
+
+<Warning>
+  Tokens are stored in `localStorage`, which is accessible to JavaScript running on the page. For higher-security deployments, consider issuing tokens via `HttpOnly` cookies instead to reduce exposure to XSS attacks.
+</Warning>

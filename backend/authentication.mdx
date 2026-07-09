@@ -1,0 +1,103 @@
+---
+title: "Admin Authentication with JWT"
+sidebarTitle: "Authentication"
+description: "Learn how Goods Inventory uses Flask-JWT-Extended to authenticate admin users, issue access tokens, and protect admin API endpoints."
+---
+
+The Goods Inventory admin API is protected with JSON Web Tokens (JWT) using Flask-JWT-Extended. Admins obtain a token by posting credentials to `/api/login`, then include it as a Bearer token on every subsequent admin request.
+
+## How to obtain a token
+
+Send a `POST` request to `/api/login` with a JSON body containing `name` and `password`:
+
+```bash
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"name": "admin", "password": "yourpassword"}'
+```
+
+**Success (HTTP 200):**
+
+```json
+{
+  "message": "Login successful",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Failure (HTTP 401):**
+
+```json
+{ "error": "Invalid credentials" }
+```
+
+## Using the token
+
+Include the token in the `Authorization` header as a **Bearer** token on every request to a protected endpoint:
+
+```bash
+curl http://localhost:5000/api/admin/responsables/buscar?q=Lopez \
+  -H "Authorization: Bearer <your_access_token>"
+```
+
+The token must be valid, unexpired, and signed with the correct `JWT_SECRET_KEY`. Any request that fails these checks is rejected before the route handler is reached.
+
+## JWT configuration
+
+Two environment variables control token behaviour. They are read from `.env` and applied to the Flask app in `main.py`:
+
+```python main.py
+app.config['JWT_SECRET_KEY'] = jwt_secret_key
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=jwt_expires_days)
+jwt = JWTManager(app)
+```
+
+- **`JWT_SECRET_KEY`** — The secret used to sign and verify tokens. Keep this value private; rotating it invalidates all existing tokens.
+- **`JWT_EXPIRES_DAYS`** — How many days a token remains valid after it is issued. Defaults to `1`.
+
+## Protecting routes
+
+All admin endpoints are decorated with `@jwt_required()`. Flask-JWT-Extended validates the Bearer token automatically before the route handler runs:
+
+```python
+from flask_jwt_extended import jwt_required
+
+@admin_locations_bp.route("/ubicaciones/buscar", methods=["GET"])
+@jwt_required()
+def admin_search_locations():
+    ...
+```
+
+A request that is missing a token, carries a malformed token, or presents an expired token receives an **HTTP 422** (unprocessable entity) or **HTTP 401** (unauthorized) response — no application logic is executed.
+
+## Token identity
+
+At login, the token payload is populated with the admin's primary key:
+
+```python
+identity = str(admin.id_admin)
+```
+
+If a route handler needs to know which admin is making the request, it can retrieve the identity from the decoded token:
+
+```python
+from flask_jwt_extended import get_jwt_identity
+
+current_admin_id = get_jwt_identity()
+```
+
+## Admin accounts
+
+Admin credentials are stored in the `admin` database table, modelled as follows:
+
+```python app/models/admin.py
+class Admin(UserMixin, db.Model):
+    __tablename__ = "admin"
+    id_admin  = db.Column(db.Integer, primary_key=True)
+    name      = db.Column(db.String(100), unique=True, nullable=False)
+    password  = db.Column(db.String(100), nullable=False)
+```
+
+<Warning>
+  Admin passwords are currently stored as **plain text**. Before deploying to production, hash passwords with `bcrypt` — `Flask-Bcrypt==1.0.1` is already listed in `requirements.txt` — and verify login attempts with `bcrypt.check_password_hash()`. Storing plain-text passwords in a production database is a critical security vulnerability.
+</Warning>

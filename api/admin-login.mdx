@@ -1,0 +1,69 @@
+---
+title: "POST /api/login — Admin Login"
+sidebarTitle: "Admin Login"
+description: "POST /api/login — authenticate as an admin user and receive a JWT access token. Pass name and password in the JSON body."
+---
+
+The login endpoint authenticates admin users by checking the `admin` table. On success it returns a short-lived JWT access token that must be included in all subsequent admin API calls.
+
+## Request
+
+- **Method:** POST
+- **Path:** `/api/login`
+- **Auth:** None
+- **Content-Type:** `application/json`
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  Admin username stored in the `admin` table.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Admin password. Validated server-side against the stored credential.
+</ParamField>
+
+### Request Example
+
+```bash
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"name": "admin", "password": "yourpassword"}'
+```
+
+## Response
+
+### 200 — Success
+
+```json
+{
+  "message": "Login successful",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+<ResponseField name="message" type="string">
+  Human-readable confirmation string. Value is always `"Login successful"` on a 200 response.
+</ResponseField>
+
+<ResponseField name="access_token" type="string">
+  Signed JWT access token. Include this value in the `Authorization` header of every subsequent admin API request.
+</ResponseField>
+
+### 401 — Invalid Credentials
+
+```json
+{ "error": "Invalid credentials" }
+```
+
+## Token Usage
+
+Pass the token as a Bearer token in the `Authorization` header for all admin endpoints:
+
+```
+Authorization: Bearer <access_token>
+```
+
+<Note>
+  Token lifetime is controlled by the `JWT_EXPIRES_DAYS` environment variable in the server `.env` file. The default lifetime is **1 day**. After expiry, the client must re-authenticate via this endpoint to obtain a new token.
+</Note>

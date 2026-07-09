@@ -1,0 +1,77 @@
+---
+title: "Database Configuration and Connection"
+sidebarTitle: "Database"
+description: "Learn how Goods Inventory configures SQLAlchemy, connects to MySQL, and auto-creates the schema on startup using Flask application context."
+---
+
+Goods Inventory uses Flask-SQLAlchemy to manage all database interactions. The connection is configured through environment variables, and the schema is created automatically on first run.
+
+## SQLAlchemy initialization
+
+The shared SQLAlchemy instance lives in `app/database.py`:
+
+```python app/database.py
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+```
+
+This `db` instance is imported by every model file and bound to the Flask application at startup via `db.init_app(app)` inside `create_app()`. Keeping the instance separate from the app factory avoids circular imports and allows models to be defined independently of the application context.
+
+## Connection string
+
+The database URI is assembled from environment variables inside `main.py` before the app context is pushed:
+
+```python main.py
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f"mysql+pymysql://{name}:{password}@{server}/{database}"
+)
+```
+
+The `mysql+pymysql` dialect prefix instructs SQLAlchemy to use **PyMySQL** as the underlying driver — a pure-Python MySQL client that requires no system-level binary installation.
+
+## Auto schema creation
+
+After the application is configured, `db.create_all()` is called inside the app context on every startup:
+
+```python main.py
+with app.app_context():
+    db.create_all()
+```
+
+`db.create_all()` inspects all registered SQLAlchemy models and issues `CREATE TABLE IF NOT EXISTS` statements for any tables that are not yet present. It does **not** drop or alter tables that already exist, so existing data is always preserved.
+
+## Database auto-creation
+
+Before SQLAlchemy attempts to connect to the target database, `main.py` opens a temporary connection to MySQL *without* specifying a database and runs a `CREATE DATABASE` statement:
+
+```python main.py
+conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {database}"))
+```
+
+This means a fresh MySQL installation requires no manual database-creation step — simply configure the `.env` file and start the server.
+
+## Querying patterns
+
+The following query patterns are used throughout the route handlers:
+
+```python
+# Filter by a single column value — returns the first match or None
+Responsible.query.filter_by(name=name).first()
+
+# Fetch a row by primary key — returns None if not found
+Location.query.get(id_location)
+
+# Partial-match search across multiple columns using LIKE
+Location.query.filter(
+    or_(
+        Location.number_location.like(f"%{query}%"),
+        Location.description.like(f"%{query}%")
+    )
+).all()
+
+# Retrieve related rows ordered by a timestamp column, newest first
+Revision.query.filter_by(id_location=id_location)\
+    .order_by(Revision.date_time_revision.desc())\
+    .all()
+```

@@ -1,0 +1,133 @@
+---
+title: "Admin Search: Responsables and Ubicaciones"
+sidebarTitle: "Admin Search"
+description: "GET /api/admin/responsables/buscar and GET /api/admin/ubicaciones/buscar — JWT-protected search endpoints for the admin dashboard."
+---
+
+The admin dashboard provides two search endpoints — one for searching responsible persons and one for searching locations — both requiring a valid JWT token.
+
+<Tabs>
+  <Tab title="Search Responsables">
+    ## GET /api/admin/responsables/buscar
+
+    Search for responsible persons by partial name match.
+
+    - **Method:** GET
+    - **Path:** `/api/admin/responsables/buscar`
+    - **Auth:** Bearer JWT
+
+    ### Query Parameters
+
+    <ParamField query="q" type="string" required>
+      Partial name to search for. An empty string returns an empty array `[]`.
+    </ParamField>
+
+    ### Request Example
+
+    ```bash
+    curl "http://localhost:5000/api/admin/responsables/buscar?q=Lopez" \
+      -H "Authorization: Bearer <token>"
+    ```
+
+    ### Response (200)
+
+    Returns an array of matching responsible-person objects.
+
+    ```json
+    [{ "id": 1, "name": "Lopez Corrales Andres" }]
+    ```
+
+    <ResponseField name="id" type="integer">
+      Primary key of the responsible person.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Full name of the responsible person.
+    </ResponseField>
+  </Tab>
+
+  <Tab title="Search Locations">
+    ## GET /api/admin/ubicaciones/buscar
+
+    Search for locations by partial number or description match.
+
+    - **Method:** GET
+    - **Path:** `/api/admin/ubicaciones/buscar`
+    - **Auth:** Bearer JWT
+
+    ### Query Parameters
+
+    <ParamField query="q" type="string" required>
+      Partial number or description to search for. Matches against both the `number_location` and `description` columns using a SQL `LIKE %query%` pattern. An empty string returns an empty array `[]`.
+    </ParamField>
+
+    ### Request Example
+
+    ```bash
+    curl "http://localhost:5000/api/admin/ubicaciones/buscar?q=104" \
+      -H "Authorization: Bearer <token>"
+    ```
+
+    ### Response (200)
+
+    Returns an array of location objects serialised via `Location.to_dict()` — the same shape as entries in the public `/api/ubicaciones` response.
+
+    ```json
+    [{
+      "id_location": 3,
+      "id_responsible": 1,
+      "number_location": 104,
+      "description": "Laboratorio de Materiales",
+      "last_revision_date": "2024-11-15T10:30:00",
+      "last_revision": {
+        "id": 7,
+        "id_location": 3,
+        "date_time_revision": "2024-11-15T10:30:00",
+        "comment": "Todo en orden"
+      }
+    }]
+    ```
+
+    <ResponseField name="id_location" type="integer">
+      Primary key of the location.
+    </ResponseField>
+
+    <ResponseField name="id_responsible" type="integer">
+      Foreign key referencing the responsible person assigned to this location.
+    </ResponseField>
+
+    <ResponseField name="number_location" type="integer">
+      Numeric identifier used to label the physical location.
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Human-readable name or description of the location (e.g. `"Laboratorio de Materiales"`).
+    </ResponseField>
+
+    <ResponseField name="last_revision_date" type="string">
+      ISO 8601 timestamp of the most recent revision for this location. `null` if no revision has been recorded yet.
+    </ResponseField>
+
+    <ResponseField name="last_revision" type="object">
+      Full revision object for the most recent revision, or `null` if none exists.
+
+      <Expandable title="last_revision fields">
+        <ResponseField name="id" type="integer">
+          Primary key of the revision record.
+        </ResponseField>
+
+        <ResponseField name="id_location" type="integer">
+          Foreign key back to the location.
+        </ResponseField>
+
+        <ResponseField name="date_time_revision" type="string">
+          ISO 8601 timestamp when the revision was recorded.
+        </ResponseField>
+
+        <ResponseField name="comment" type="string">
+          Free-text comment left by the inspector. May be `null`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Tab>
+</Tabs>

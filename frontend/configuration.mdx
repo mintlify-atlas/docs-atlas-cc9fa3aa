@@ -1,0 +1,72 @@
+---
+title: "Configuring the React Frontend"
+sidebarTitle: "Configuration"
+description: "Configure the Goods Inventory React frontend with environment variables, understand the API URL binding, and learn how to build for production."
+---
+
+The React frontend has a single required environment variable that controls which backend it talks to.
+
+## Environment variables
+
+<ParamField query="VITE_API_URL" type="string" required>
+  The base URL of the Flask backend. All API calls are prefixed with this value.
+
+  **Example:** `http://localhost:5000`
+</ParamField>
+
+This variable is consumed in `src/config/api.js`:
+
+```javascript src/config/api.js
+export const API_URL = import.meta.env.VITE_API_URL;
+```
+
+Vite exposes only variables prefixed with `VITE_` to the browser bundle at build time. Any environment variable without this prefix is intentionally kept out of client-side code.
+
+<Tip>
+  Create a `.env` file at the root of the `frontend/` directory and set `VITE_API_URL` there for local development. This file should be added to `.gitignore` to avoid committing environment-specific values.
+</Tip>
+
+## Development
+
+Start the Vite development server with:
+
+```bash
+npm run dev
+```
+
+The dev server starts on `http://localhost:5173` by default and proxies hot-module replacement (HMR) updates to the browser automatically as you edit source files.
+
+## Production build
+
+Compile a production-optimised bundle with:
+
+```bash
+npm run build
+```
+
+This produces a `dist/` folder containing static HTML, JS, and CSS assets. Set `VITE_API_URL` to the production Flask URL **before** running the build so the correct backend address is baked into the bundle:
+
+```bash
+VITE_API_URL=https://api.yourdomain.com npm run build
+```
+
+Then serve the `dist/` folder with any static file host — Nginx, Vercel, GitHub Pages, or any CDN that can serve a single-page application.
+
+## Dependencies
+
+Key packages used by the frontend:
+
+| Package | Purpose |
+|---|---|
+| `react` | Core UI library (v19) |
+| `react-dom` | DOM rendering for React |
+| `react-router-dom` | Client-side routing (`BrowserRouter`, `useNavigate`, etc.) |
+| `@headlessui/react` | Unstyled, accessible UI primitives (dropdowns, dialogs) |
+| `@heroicons/react` | SVG icon set designed for Tailwind CSS |
+| `flowbite` | Tailwind CSS component library |
+| `tailwindcss` | Utility-first CSS framework |
+| `vite` | Build tool and development server |
+
+<Tip>
+  Tailwind CSS is configured with custom color tokens — `unisonBlue`, `unisonOrange`, and `unisonYellow` — defined in `tailwind.config.js`. If you are customising the UI to match a different brand, update those token values in that file and they will propagate throughout all components automatically.
+</Tip>

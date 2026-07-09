@@ -1,0 +1,90 @@
+---
+title: "Setting Up the Flask Backend"
+sidebarTitle: "Setup"
+description: "Install Python dependencies, configure environment variables, and start the Goods Inventory Flask server with auto database creation and Excel data import."
+---
+
+The Goods Inventory backend is a Flask application that auto-creates the MySQL database, imports inventory data from Excel files, and exposes a REST API for both the public interface and admin panel.
+
+## Prerequisites
+
+<Note>
+  You need **Python ≥ 3.9**, **pip**, and a running **MySQL server** before continuing.
+</Note>
+
+## Install dependencies
+
+Navigate to the `server-flask` directory and install all required packages:
+
+```bash
+cd server-flask
+pip install -r requirements.txt
+```
+
+The following key packages are installed:
+
+| Package              | Version | Purpose                      |
+| -------------------- | ------- | ---------------------------- |
+| Flask                | 3.1.1   | Web framework                |
+| Flask-SQLAlchemy     | 3.1.1   | ORM                          |
+| Flask-JWT-Extended   | 4.7.1   | JWT authentication           |
+| Flask-CORS           | 6.0.1   | Cross-origin requests        |
+| PyMySQL              | 1.1.2   | MySQL driver                 |
+| pandas               | 2.3.2   | Excel file parsing           |
+| xlrd                 | 2.0.2   | .xls file support            |
+| python-dotenv        | 1.2.1   | Environment variable loading |
+
+## Environment variables
+
+Create a `.env` file inside the `server-flask` directory with the following content:
+
+```env server-flask/.env
+NAME=root
+PASSWORD=your_mysql_password
+SERVER=localhost
+DATABASE=inventario_csti
+JWT_SECRET_KEY=change_this_to_a_long_random_string
+JWT_EXPIRES_DAYS=1
+```
+
+<ParamField path="NAME" type="string" default="root">
+  MySQL username used to connect to your MySQL server.
+</ParamField>
+
+<ParamField path="PASSWORD" type="string" required>
+  MySQL password for the specified user.
+</ParamField>
+
+<ParamField path="SERVER" type="string" default="localhost">
+  Hostname or IP address of the MySQL server.
+</ParamField>
+
+<ParamField path="DATABASE" type="string" default="inventario_csti">
+  Name of the database to create and use. The server creates it automatically if it does not exist.
+</ParamField>
+
+<ParamField path="JWT_SECRET_KEY" type="string" required>
+  Secret string used to sign JWT tokens. Use a long, random value and keep it private.
+</ParamField>
+
+<ParamField path="JWT_EXPIRES_DAYS" type="integer" default="1">
+  Lifetime of issued JWT access tokens, expressed in whole days.
+</ParamField>
+
+## Starting the server
+
+From the `server-flask` directory, run:
+
+```bash
+python main.py
+```
+
+The server starts in debug mode at `http://127.0.0.1:5000`. On the **first run**, it performs the following steps automatically:
+
+1. Creates the `inventario_csti` database if it does not already exist.
+2. Calls `db.create_all()` to create all SQLAlchemy model tables.
+3. Imports inventory data from `app/data/areas.xls` and `app/data/articulos.xls`.
+
+<Warning>
+  Debug mode must **not** be used in production. Set `app.run(debug=False)` in `main.py`, or serve the application with a production-grade WSGI server such as **gunicorn**.
+</Warning>

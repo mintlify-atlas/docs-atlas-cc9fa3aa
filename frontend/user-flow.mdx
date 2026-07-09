@@ -1,0 +1,48 @@
+---
+title: "Public User Flow: Search, Browse, and Submit Revisions"
+sidebarTitle: "User Flow"
+description: "Walk through the public interface of Goods Inventory — searching for a responsible person, browsing locations, viewing items, and submitting a revision comment."
+---
+
+The public interface of Goods Inventory is designed for department members to look up their assigned storage locations and confirm inventory by submitting revision comments. No login is required.
+
+## Step-by-step flow
+
+<Steps>
+  <Step title="Search for a responsible person">
+    **Route:** `/`
+
+    The home page renders `BuscadorResponsables`. As the user types at least 2 characters, a debounced fetch (200ms delay) calls `GET /api/responsables/buscar?q={query}` and displays matching names. The user clicks a name to navigate to `/ubicaciones/{id}`.
+  </Step>
+
+  <Step title="Browse locations">
+    **Route:** `/ubicaciones/:responsableId`
+
+    The `Ubicaciones` component fetches `GET /api/ubicaciones/{responsableId}` and lists all locations assigned to that responsible person. Each row shows the location number, description, and the last revision date (or <span style={{ color: "red" }}>"Sin revisiones"</span> in red if none). Clicking a location navigates to `/items/{id_location}`.
+  </Step>
+
+  <Step title="View items">
+    **Route:** `/items/:ubicacionId`
+
+    The `Items` component fetches `GET /api/items/{ubicacionId}` and displays a table with account numbers (`account_name`) and descriptions for all items at that location.
+  </Step>
+
+  <Step title="Submit a revision">
+    **Route:** `/items/:ubicacionId` (same page)
+
+    At the bottom of the items page, a textarea lets the user write a comment. Clicking **"Enviar revisión"** POSTs to `POST /api/revisiones` with `{ id_location, comment }`. On success, a confirmation message is displayed.
+  </Step>
+</Steps>
+
+## Auth redirect behaviour
+
+If a JWT token is found in `localStorage`, the public pages (`/`, `/ubicaciones/:id`, `/items/:id`) automatically redirect to `/dashboard`. This ensures admins land on the right interface after login and are never shown the public-facing search flow.
+
+## API calls made by the public interface
+
+| Component | Method | Endpoint | Purpose |
+|---|---|---|---|
+| `BuscadorResponsables` | `GET` | `/api/responsables/buscar?q={q}` | Autocomplete responsible search |
+| `Ubicaciones` | `GET` | `/api/ubicaciones/{responsableId}` | List locations for a responsible |
+| `Items` | `GET` | `/api/items/{ubicacionId}` | List items at a location |
+| `Items` | `POST` | `/api/revisiones` | Submit a revision comment |

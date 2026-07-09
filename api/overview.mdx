@@ -1,0 +1,73 @@
+---
+title: "Goods Inventory REST API Overview"
+sidebarTitle: "Overview"
+description: "Overview of the Goods Inventory Flask REST API — base URL, authentication, response format, and the full list of public and admin endpoints."
+---
+
+The Goods Inventory API is a REST API built with Flask. It exposes two sets of endpoints: **public endpoints** (no auth required) for the department member lookup flow, and **admin endpoints** (JWT required) for inventory administration.
+
+## Base URL
+
+The default base URL is `http://localhost:5000`. In production, set `VITE_API_URL` on the frontend to match your deployed backend URL.
+
+```
+http://localhost:5000
+```
+
+## Authentication
+
+Public endpoints require no authentication. Admin endpoints require a Bearer JWT token obtained from `POST /api/login`. Include it in every admin request:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+Requests to protected admin routes without a valid token will receive a `401 Unauthorized` response.
+
+## Response Format
+
+All responses are JSON. The following HTTP status codes are used:
+
+| Status | Meaning |
+|--------|---------|
+| `200 OK` | Successful GET request |
+| `201 Created` | Successful POST request |
+| `400 Bad Request` | Missing or invalid request parameters |
+| `401 Unauthorized` | Missing or invalid JWT token |
+| `404 Not Found` | Requested resource does not exist |
+
+## CORS
+
+The API is configured to accept requests from any origin. The following header is present on all responses:
+
+```
+Access-Control-Allow-Origin: *
+```
+
+The `Authorization` header is explicitly exposed to browsers, allowing frontend clients to read it when needed.
+
+## Endpoint Index
+
+### Public Endpoints
+
+No authentication required.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/responsables/buscar` | Search responsible persons by name |
+| `GET` | `/api/ubicaciones/{responsable_id}` | Get locations for a responsible person |
+| `GET` | `/api/items/{ubicacion_id}` | Get items at a location |
+| `POST` | `/api/revisiones` | Submit a revision comment |
+| `POST` | `/api/login` | Admin login, returns JWT |
+
+### Admin Endpoints
+
+JWT required — include `Authorization: Bearer <access_token>` in every request.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/admin/responsables/buscar` | Admin: search responsible persons |
+| `GET` | `/api/admin/ubicaciones/buscar` | Admin: search locations |
+| `GET` | `/api/admin/responsables/{id}/ubicaciones` | Admin: get locations for a responsible |
+| `GET` | `/api/admin/items/{ubicacion_id}` | Admin: get items at a location |
+| `GET` | `/api/admin/locations/{id_location}/revisions` | Admin: get revision history for a location |

@@ -1,0 +1,108 @@
+---
+title: "GET /api/ubicaciones/{id} — Locations by Responsible"
+sidebarTitle: "Ubicaciones"
+description: "GET /api/ubicaciones/{responsable_id} — retrieve all storage locations assigned to a responsible person, including last revision date."
+---
+
+Retrieve all storage locations assigned to a given responsible person, along with the most recent revision record for each location. This public endpoint is typically called after the user selects themselves from the results of [`GET /api/responsables/buscar`](/api/search-responsables).
+
+## Request
+
+**Method:** `GET`  
+**Path:** `/api/ubicaciones/{responsable_id}`  
+**Auth:** None
+
+### Path Parameters
+
+<ParamField path="responsable_id" type="integer" required>
+  The `id_responsible` of the responsible person whose locations should be retrieved. Obtain this value from the `id` field returned by `GET /api/responsables/buscar`.
+</ParamField>
+
+## Response
+
+### 200 — Success
+
+Returns an object containing the responsible person's name and a list of their assigned locations. Each location includes its most recent revision record if one exists.
+
+<ResponseField name="responsable" type="string">
+  The full name of the responsible person.
+</ResponseField>
+
+<ResponseField name="ubicaciones" type="array">
+  Array of location objects assigned to the responsible person.
+
+  <Expandable title="ubicaciones[]">
+    <ResponseField name="id_location" type="integer">
+      Unique identifier for the storage location.
+    </ResponseField>
+
+    <ResponseField name="id_responsible" type="integer">
+      Identifier of the responsible person assigned to this location.
+    </ResponseField>
+
+    <ResponseField name="number_location" type="integer">
+      The physical room or area number for the location.
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Human-readable name or description of the location.
+    </ResponseField>
+
+    <ResponseField name="last_revision_date" type="string | null">
+      ISO 8601 timestamp of the most recent revision for this location. `null` if the location has never been revised.
+    </ResponseField>
+
+    <ResponseField name="last_revision" type="object | null">
+      The most recent revision record, or `null` if the location has never been revised.
+
+      <Expandable title="last_revision">
+        <ResponseField name="id" type="integer">
+          Unique identifier of the revision record.
+        </ResponseField>
+
+        <ResponseField name="id_location" type="integer">
+          The location this revision belongs to.
+        </ResponseField>
+
+        <ResponseField name="date_time_revision" type="string">
+          ISO 8601 timestamp of when the revision was recorded.
+        </ResponseField>
+
+        <ResponseField name="comment" type="string">
+          The comment recorded during the revision.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "responsable": "Lopez Corrales Andres",
+  "ubicaciones": [
+    {
+      "id_location": 3,
+      "id_responsible": 1,
+      "number_location": 104,
+      "description": "Laboratorio de Materiales",
+      "last_revision_date": "2024-11-15T10:30:00",
+      "last_revision": {
+        "id": 7,
+        "id_location": 3,
+        "date_time_revision": "2024-11-15T10:30:00",
+        "comment": "Todo en orden"
+      }
+    }
+  ]
+}
+```
+
+<Note>
+  `last_revision_date` and `last_revision` are both `null` when the location has not yet had any revision submitted via `POST /api/revisiones`.
+</Note>
+
+## Example
+
+```bash
+curl "http://localhost:5000/api/ubicaciones/1"
+```

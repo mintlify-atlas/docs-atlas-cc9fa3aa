@@ -1,47 +1,88 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Goods Inventory"
+sidebarTitle: "Quickstart"
+description: "Set up the Goods Inventory Flask backend and React frontend locally in under 10 minutes, from cloning the repo to browsing live inventory data."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+This guide walks you through running the complete Goods Inventory stack on your local machine. By the end you will have the Flask API serving data from a local MySQL database and the React dev server rendering the inventory UI in your browser.
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+<Note>
+  **Prerequisites** — make sure the following are available before you begin:
+  - **Node.js ≥ 18** (includes `npm`)
+  - **Python ≥ 3.9** with `pip`
+  - **MySQL** running locally and accessible with a user that can create databases
+</Note>
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Clone the repository">
+    Download the project from GitHub and enter the root directory:
 
     ```bash
-    npm install your-package
+    git clone https://github.com/AndresLopezCorrales/Goods-Inventory.git
+    cd Goods-Inventory
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+
+  <Step title="Set up the Flask backend">
+    Move into the server directory and install the Python dependencies listed in `requirements.txt`:
 
     ```bash
-    your-cli init
+    cd server-flask
+    pip install -r requirements.txt
+    ```
+
+    Next, create a `.env` file in the `server-flask/` directory. `main.py` uses **python-dotenv** to load these variables at startup, so the file must exist before you run the server:
+
+    ```env server-flask/.env
+    NAME=root
+    PASSWORD=your_mysql_password
+    SERVER=localhost
+    DATABASE=inventario_csti
+    JWT_SECRET_KEY=your_secret_key_here
+    JWT_EXPIRES_DAYS=1
+    ```
+
+    Replace `your_mysql_password` with your actual MySQL password, and set `JWT_SECRET_KEY` to any long, random string — it signs the admin authentication tokens.
+
+    With the environment configured, start the development server:
+
+    ```bash
+    python main.py
+    ```
+
+    On the very first run, SQLAlchemy creates the `inventario_csti` database and all tables automatically. The startup routine then imports seed data from two bundled Excel files — `app/data/areas.xls` (locations and responsibles) and `app/data/articulos.xls` (items) — so the database is pre-populated and ready to query immediately.
+  </Step>
+
+  <Step title="Set up the React frontend">
+    Open a new terminal, navigate to the client directory, and install the JavaScript dependencies:
+
+    ```bash
+    cd ../client-react
+    npm install
+    ```
+
+    Create a `.env` file in `client-react/` that points the frontend at your local Flask server:
+
+    ```env client-react/.env
+    VITE_API_URL=http://localhost:5000
+    ```
+
+    Vite exposes this value to the application as `import.meta.env.VITE_API_URL`. The `src/config/api.js` file reads it to configure the `axios` base URL used by every API call.
+
+    Start the Vite development server:
+
+    ```bash
+    npm run dev
     ```
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
 
-    ```bash
-    your-cli start
-    ```
+  <Step title="Open the app">
+    The React dev server listens on **`http://localhost:5173`** by default. Open that URL in your browser.
+
+    You will land on the public home page. Type a name into the search box to find a responsible person, then click through to see their assigned locations and the items stored at each one. The frontend is talking live to your Flask backend — any data imported from the Excel seed files will appear here.
   </Step>
 </Steps>
 
 <Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
-
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+  **Accessing the admin panel** — navigate to `/admin` in the browser (i.e., `http://localhost:5173/admin`). Log in using credentials from the `admin` table in your MySQL database. Once authenticated, the admin dashboard lets you search across the full inventory, inspect all responsibles and locations, and review the complete revision history.
 </Tip>

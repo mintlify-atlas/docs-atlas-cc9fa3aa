@@ -1,0 +1,83 @@
+---
+title: "GET /api/admin/items/{id} — Admin Items at Location"
+sidebarTitle: "Admin Items"
+description: "GET /api/admin/items/{ubicacionId} — JWT-protected endpoint returning location details and all inventory items for a given storage location."
+---
+
+The admin items endpoint returns the same data as the public `/api/items/{id}` endpoint but requires a valid JWT token. It is used by the admin location-detail view to display the full inventory list for a selected location.
+
+## Request
+
+- **Method:** GET
+- **Path:** `/api/admin/items/{ubicacionId}`
+- **Auth:** Bearer JWT
+
+### Path Parameters
+
+<ParamField path="ubicacionId" type="integer" required>
+  The `id_location` primary key of the target storage location.
+</ParamField>
+
+### Request Example
+
+```bash
+curl "http://localhost:5000/api/admin/items/3" \
+  -H "Authorization: Bearer <token>"
+```
+
+## Response
+
+### 200 — Success
+
+```json
+{
+  "ubicacion": {
+    "id_location": 3,
+    "number_location": 104,
+    "description": "Laboratorio de Materiales"
+  },
+  "items": [
+    {
+      "id_item": 12,
+      "account_name": "12345678901",
+      "description": "Microscopio Olympus"
+    }
+  ]
+}
+```
+
+<ResponseField name="ubicacion" type="object">
+  Summary details of the requested location.
+
+  <Expandable title="ubicacion fields">
+    <ResponseField name="id_location" type="integer">
+      Primary key of the location.
+    </ResponseField>
+
+    <ResponseField name="number_location" type="integer">
+      Numeric identifier used to label the physical location.
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Human-readable name or description of the location.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="items" type="array">
+  List of inventory items stored at this location. Returns an empty array `[]` when no items are recorded.
+
+  <Expandable title="item fields">
+    <ResponseField name="id_item" type="integer">
+      Primary key of the inventory item.
+    </ResponseField>
+
+    <ResponseField name="account_name" type="string">
+      Account or asset code associated with the item (up to 11 digits).
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Free-text description identifying the physical item (e.g. `"Microscopio Olympus"`).
+    </ResponseField>
+  </Expandable>
+</ResponseField>

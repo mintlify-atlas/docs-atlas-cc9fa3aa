@@ -1,0 +1,77 @@
+---
+title: "GET /api/admin/locations/{id}/revisions"
+sidebarTitle: "Admin Revisions"
+description: "GET /api/admin/locations/{id_location}/revisions — JWT-protected endpoint returning all revision records for a location, sorted newest first."
+---
+
+This endpoint returns the complete revision history for a specific location, sorted by `date_time_revision` descending (newest first). It is used by the admin location-detail view to show the audit trail of all inspections carried out at that location.
+
+## Request
+
+- **Method:** GET
+- **Path:** `/api/admin/locations/{id_location}/revisions`
+- **Auth:** Bearer JWT
+
+### Path Parameters
+
+<ParamField path="id_location" type="integer" required>
+  Primary key of the location whose revision history should be returned.
+</ParamField>
+
+### Request Example
+
+```bash
+curl "http://localhost:5000/api/admin/locations/3/revisions" \
+  -H "Authorization: Bearer <token>"
+```
+
+## Response
+
+### 200 — Success
+
+Returns an array of revision records ordered newest-first. An empty array `[]` is returned when no revisions have been recorded for the location.
+
+```json
+[
+  {
+    "id": 7,
+    "id_location": 3,
+    "date_time_revision": "2024-11-15T10:30:00",
+    "comment": "Todo en orden"
+  },
+  {
+    "id": 3,
+    "id_location": 3,
+    "date_time_revision": "2024-10-02T14:15:00",
+    "comment": "Falta etiqueta en balanza"
+  }
+]
+```
+
+<ResponseField name="id" type="integer">
+  Primary key of the revision record.
+</ResponseField>
+
+<ResponseField name="id_location" type="integer">
+  Foreign key referencing the location this revision belongs to.
+</ResponseField>
+
+<ResponseField name="date_time_revision" type="string">
+  ISO 8601 timestamp recording when the inspection was carried out.
+</ResponseField>
+
+<ResponseField name="comment" type="string">
+  Free-text comment left by the inspector describing the outcome of the inspection. May be `null` when no comment was provided.
+</ResponseField>
+
+### 404 — Location Not Found
+
+Returned when no record matching `id_location` exists.
+
+```json
+{ "error": "Location not found" }
+```
+
+<Tip>
+  To submit new revisions, use the public **POST /api/revisiones** endpoint — revision creation is intentionally available without authentication so that department members can record inspections without needing admin credentials.
+</Tip>

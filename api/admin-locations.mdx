@@ -1,0 +1,111 @@
+---
+title: "GET /api/admin/responsables/{id}/ubicaciones"
+sidebarTitle: "Admin Locations"
+description: "GET /api/admin/responsables/{id}/ubicaciones — JWT-protected endpoint that returns all locations assigned to a specific responsible person."
+---
+
+This endpoint returns a responsible person's name together with the full list of locations assigned to them. It is used by the admin dashboard to populate the location list when drilling into a specific responsible person.
+
+## Request
+
+- **Method:** GET
+- **Path:** `/api/admin/responsables/{responsable_id}/ubicaciones`
+- **Auth:** Bearer JWT
+
+### Path Parameters
+
+<ParamField path="responsable_id" type="integer" required>
+  Primary key of the responsible person whose locations should be returned.
+</ParamField>
+
+### Request Example
+
+```bash
+curl "http://localhost:5000/api/admin/responsables/1/ubicaciones" \
+  -H "Authorization: Bearer <token>"
+```
+
+## Response
+
+### 200 — Success
+
+```json
+{
+  "responsable": "Lopez Corrales Andres",
+  "ubicaciones": [
+    {
+      "id_location": 3,
+      "id_responsible": 1,
+      "number_location": 104,
+      "description": "Laboratorio de Materiales",
+      "last_revision_date": "2024-11-15T10:30:00",
+      "last_revision": {
+        "id": 7,
+        "id_location": 3,
+        "date_time_revision": "2024-11-15T10:30:00",
+        "comment": "Todo en orden"
+      }
+    }
+  ]
+}
+```
+
+<ResponseField name="responsable" type="string">
+  Full name of the responsible person identified by `responsable_id`.
+</ResponseField>
+
+<ResponseField name="ubicaciones" type="array">
+  List of location objects assigned to this responsible person. Returns an empty array `[]` if the person has no assigned locations.
+
+  <Expandable title="ubicacion fields">
+    <ResponseField name="id_location" type="integer">
+      Primary key of the location.
+    </ResponseField>
+
+    <ResponseField name="id_responsible" type="integer">
+      Foreign key referencing the responsible person for this location.
+    </ResponseField>
+
+    <ResponseField name="number_location" type="integer">
+      Numeric identifier used to label the physical location.
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Human-readable name or description of the location.
+    </ResponseField>
+
+    <ResponseField name="last_revision_date" type="string">
+      ISO 8601 timestamp of the most recent revision. `null` if no revision has been recorded yet.
+    </ResponseField>
+
+    <ResponseField name="last_revision" type="object">
+      Full revision object for the most recent revision, or `null` if none exists.
+
+      <Expandable title="last_revision fields">
+        <ResponseField name="id" type="integer">
+          Primary key of the revision record.
+        </ResponseField>
+
+        <ResponseField name="id_location" type="integer">
+          Foreign key back to the location.
+        </ResponseField>
+
+        <ResponseField name="date_time_revision" type="string">
+          ISO 8601 timestamp when the revision was recorded.
+        </ResponseField>
+
+        <ResponseField name="comment" type="string">
+          Free-text comment left by the inspector. May be `null`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### 404 — Responsible Person Not Found
+
+Returned when no record matching `responsable_id` exists in the `admin` table.
+
+```json
+{ "error": "Responsable no encontrado" }
+```

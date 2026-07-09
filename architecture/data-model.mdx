@@ -1,0 +1,186 @@
+---
+title: "Data Model: Entities and Relationships"
+sidebarTitle: "Data Model"
+description: "Understand the five SQLAlchemy models in Goods Inventory — Admin, Responsible, Location, Item, and Revision — and how they relate to each other."
+---
+
+The database schema is managed by SQLAlchemy and contains five tables: `admin`, `responsible`, `location`, `items`, and `revision`. Each table maps to a Python model class, and SQLAlchemy handles schema creation, foreign-key enforcement, and cascade rules automatically. The sections below document every column, constraint, and relationship for each model.
+
+## Models
+
+### `responsible`
+
+Represents a person or department that is accountable for one or more physical locations in the inventory.
+
+<ParamField path="id_responsible" type="Integer">
+  Primary key. Auto-incremented unique identifier for each responsible party.
+</ParamField>
+
+<ParamField path="name" type="String(100)" required>
+  Full name of the responsible party. Must be unique across all records and cannot be null.
+</ParamField>
+
+---
+
+### `location`
+
+Represents a physical storage area or room assigned to a responsible party. A location can hold many items and accumulates revision history over time.
+
+<ParamField path="id_location" type="Integer">
+  Primary key. Auto-incremented unique identifier for the location.
+</ParamField>
+
+<ParamField path="id_responsible" type="Integer" required>
+  Foreign key referencing `responsible.id_responsible`. Links this location to its owner.
+</ParamField>
+
+<ParamField path="number_location" type="Integer" required>
+  A unique numeric code identifying the physical location. Cannot be null.
+</ParamField>
+
+<ParamField path="description" type="String(500)">
+  Optional human-readable description of the location (e.g. room name or area notes).
+</ParamField>
+
+<ParamField path="last_revision_date" type="DateTime">
+  Timestamp of the most recent revision. Nullable — no value indicates the location has never been reviewed.
+</ParamField>
+
+**Relationship:** A `Location` has many `Revision` records. The relationship is configured with `cascade="all, delete-orphan"`, so deleting a location automatically removes all of its associated revisions.
+
+---
+
+### `items`
+
+Represents an individual inventory asset assigned to a location.
+
+<ParamField path="id_item" type="Integer">
+  Primary key. Auto-incremented unique identifier for the item.
+</ParamField>
+
+<ParamField path="id_location" type="Integer" required>
+  Foreign key referencing `location.id_location`. Assigns the item to its physical location.
+</ParamField>
+
+<ParamField path="account_name" type="String(11)" required>
+  The account or asset code for the item (e.g. a fixed-asset tag). Cannot be null.
+</ParamField>
+
+<ParamField path="description" type="Text">
+  Optional long-form description of the item.
+</ParamField>
+
+---
+
+### `revision`
+
+Records a single inspection or audit event for a location, capturing when it happened and any notes left by the reviewer.
+
+<ParamField path="id_revision" type="Integer">
+  Primary key. Auto-incremented unique identifier for the revision.
+</ParamField>
+
+<ParamField path="id_location" type="Integer" required>
+  Foreign key referencing `location.id_location`. Ties this revision to the location that was reviewed.
+</ParamField>
+
+<ParamField path="date_time_revision" type="DateTime" required>
+  Exact timestamp of when the revision took place. Cannot be null.
+</ParamField>
+
+<ParamField path="comment" type="String(500)">
+  Optional free-text notes recorded during the revision.
+</ParamField>
+
+**Relationship:** A `Revision` belongs to one `Location`. The back-reference is populated by the `cascade="all, delete-orphan"` relationship defined on the `Location` model.
+
+---
+
+### `admin`
+
+Stores credentials for users who can access the admin dashboard. This model is entirely standalone — it has no foreign keys or ORM relationships to other tables.
+
+<ParamField path="id_admin" type="Integer">
+  Primary key. Auto-incremented unique identifier for the admin account.
+</ParamField>
+
+<ParamField path="name" type="String(100)" required>
+  Login username. Must be unique and cannot be null.
+</ParamField>
+
+<ParamField path="password" type="String(100)" required>
+  Password for the admin account. Cannot be null. See the warning below regarding storage.
+</ParamField>
+
+<Warning>
+  Admin passwords are currently stored as **plain text** in the database. Before deploying Goods Inventory to any production or shared environment, passwords must be hashed using a secure algorithm such as `bcrypt` or `argon2`. Plain-text credential storage is a critical security vulnerability.
+</Warning>
+
+---
+
+## Entity-relationship summary
+
+The five models form a simple, linear ownership hierarchy:
+
+- **One `Responsible` has many `Locations`** — a responsible party is the owner of all locations assigned to them. Deleting a responsible does not automatically cascade to their locations; orphan locations should be handled at the application layer.
+- **One `Location` has many `Items`** — every item in the inventory belongs to exactly one location.
+- **One `Location` has many `Revisions`** — each inspection of a location creates a new revision record. Revisions are cascade-deleted when their parent location is removed.
+- **`Admin` is standalone** — it participates in no relationships. Its sole purpose is authentication: the `/api/login` endpoint validates credentials against this table and issues a JWT.
+
+## API serialisation (`to_dict()`)
+
+Each model exposes a `to_dict()` method that controls the JSON shape returned by the API. The three models below appear most frequently in API responses.
+
+### `Location.to_dict()`
+
+Returns the full location record plus a nested snapshot of its most recent revision, making it possible to display freshness information without a second request.
+
+```python
+def to_dict(self):
+    last_rev = self.last_revision()
+    return {
+        'id_location': self.id_location,
+        'id_responsible': self.id_responsible,
+        'number_location': self.number_location,
+        'description': self.description,
+        'last_revision_date': self.last_revision_date.isoformat() if self.last_revision_date else None,
+        'last_revision': last_rev.to_dict() if last_rev else None
+    }
+```
+
+- `last_revision_date` is serialised with `.isoformat()` and returned as `null` when no revision exists.
+- `last_revision` is a nested `Revision` object (see below), or `null` if the location has never been reviewed.
+
+### `Items.to_dict()`
+
+Returns a compact representation of an item. Note that `account_name` is exposed under the key `name` for a cleaner API contract.
+
+```python
+def to_dict(self):
+    return {
+        'id': self.id_item,
+        'id_location': self.id_location,
+        'name': self.account_name,
+        'description': self.description
+    }
+```
+
+- `id` maps to the internal `id_item` primary key.
+- `name` maps to `account_name` (the fixed-asset code stored in the database).
+
+### `Revision.to_dict()`
+
+Returns a flat revision record. The timestamp is always present and always ISO 8601 formatted — `date_time_revision` is a non-nullable column.
+
+```python
+def to_dict(self):
+    return {
+        'id': self.id_revision,
+        'id_location': self.id_location,
+        'date_time_revision': self.date_time_revision.isoformat(),
+        'comment': self.comment
+    }
+```
+
+- `id` maps to the internal `id_revision` primary key.
+- `comment` may be `null` if no notes were recorded during the revision.

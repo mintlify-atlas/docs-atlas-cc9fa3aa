@@ -1,0 +1,77 @@
+---
+title: "Goods Inventory: What It Is and How It Works"
+sidebarTitle: "Introduction"
+description: "Learn what Goods Inventory does, who it is for, and how its React frontend and Flask backend work together to manage department inventory."
+---
+
+Goods Inventory is a full-stack web application built for the **Departamento de Ingeniería Industrial at Universidad de Sonora**. It gives department staff a single place to track every physical good (article) owned by the department, record the storage location where each item is kept, and identify the responsible person assigned to each location. Administrators can log in securely to audit the entire inventory, while public users — department members — can look up their own locations and submit periodic revisions without needing an account.
+
+## What the system manages
+
+The data model revolves around five core entities that together describe the full lifecycle of a department asset:
+
+| Entity | Spanish name | Purpose |
+|---|---|---|
+| **Admin** | Administrador | A privileged user who can log in and manage the inventory |
+| **Responsible** | Responsable | A department member assigned to one or more storage locations |
+| **Location** | Ubicación | A physical space (office, lab, storage room) that holds items |
+| **Item** | Artículo | A physical good tracked by the department (furniture, equipment, etc.) |
+| **Revision** | Revisión | A periodic audit record submitted for a location, confirming its items |
+
+Locations belong to a responsible person, items are assigned to locations, and revisions are filed against locations — creating a clear chain of accountability from the physical object all the way back to the person responsible for it.
+
+## Two user roles
+
+Goods Inventory is designed for two distinct audiences, each with their own entry point and capabilities:
+
+**Public users** are ordinary department members. They do not need to log in. They can search for a responsible person by name, browse the locations assigned to that person, view the items stored there, and submit a revision to confirm that the inventory at a given location is accurate.
+
+**Admins** are privileged staff who authenticate via a JSON Web Token (JWT) issued by the Flask backend. Once logged in, admins can search across the entire inventory, view all responsibles and their locations, inspect every item, and review the full revision history — giving them the oversight needed for departmental audits and reporting.
+
+## Tech stack
+
+<CardGroup cols={2}>
+  <Card title="Flask + SQLAlchemy" icon="server">
+    The backend is a Python **Flask** application that exposes a REST API consumed by the frontend. **SQLAlchemy** acts as the ORM, mapping Python classes to MySQL tables and handling all database queries. **Flask-JWT-Extended** secures the admin endpoints with short-lived JSON Web Tokens.
+  </Card>
+  <Card title="MySQL" icon="database">
+    All inventory data — admins, responsibles, locations, items, and revisions — is persisted in a **MySQL** relational database. The schema is created automatically by SQLAlchemy on first startup, and seed data is imported from bundled Excel files.
+  </Card>
+  <Card title="React + Vite" icon="browser">
+    The frontend is a **React 19** single-page application scaffolded with **Vite** for fast development and optimized production builds. It talks to the Flask API via `axios`, with the base URL configured through a Vite environment variable.
+  </Card>
+  <Card title="Tailwind CSS + Flowbite" icon="paintbrush">
+    All UI components are styled with **Tailwind CSS** utility classes. **Flowbite** provides ready-made accessible components — modals, tables, badges, and forms — that keep the interface consistent without custom CSS overhead.
+  </Card>
+</CardGroup>
+
+## Project layout
+
+The repository is split into two top-level directories — one for each tier of the stack:
+
+```text
+Goods-Inventory/
+├── client-react/        # React + Vite frontend
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Home/    # Public-facing components
+│   │   │   └── Admin/   # Admin dashboard components
+│   │   └── config/api.js
+│   └── package.json
+└── server-flask/        # Flask backend
+    ├── main.py
+    ├── requirements.txt
+    └── app/
+        ├── models/      # SQLAlchemy models
+        ├── routes/      # Flask blueprints
+        │   ├── Home/    # Public API endpoints
+        │   └── Admin/   # Admin API endpoints
+        ├── controllers/ # Excel import logic
+        └── properties/  # DB config defaults
+```
+
+The `client-react/src/components/` directory mirrors the role separation: the `Home/` subtree contains everything a public user sees, and the `Admin/` subtree contains the authenticated dashboard. On the backend, Flask blueprints in `routes/Home/` and `routes/Admin/` follow the same split, making it straightforward to trace any UI action back to the corresponding API endpoint.
+
+<Note>
+  Ready to run the project on your machine? Head to the [Quickstart](/quickstart) page for step-by-step instructions to clone the repo, configure your environment, and launch both servers in under 10 minutes.
+</Note>

@@ -1,20 +1,61 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Goods Inventory: Department Inventory Management System"
+sidebarTitle: "Home"
+description: "Goods Inventory is a full-stack web app for managing and auditing physical goods at the Industrial Engineering Department of Universidad de Sonora."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Goods Inventory is a full-stack web application built for the **Departamento de Ingeniería Industrial** at Universidad de Sonora. It provides a public-facing interface for department members to look up their assigned storage locations and submit inventory revisions, alongside a protected admin panel for comprehensive inventory oversight.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+The system is powered by a **Python/Flask** REST API backed by MySQL, and a **React + Vite** frontend styled with Tailwind CSS.
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get both the backend and frontend running locally in minutes.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/architecture/overview">
+    Understand how the Flask backend, MySQL database, and React frontend fit together.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore all public and admin REST endpoints with request and response schemas.
+  </Card>
+  <Card title="Admin Panel" icon="shield-halved" href="/frontend/admin-panel">
+    Learn how the JWT-protected admin dashboard works for inventory management.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+<Steps>
+  <Step title="Import inventory data">
+    On startup, the Flask server automatically reads `areas.xls` and `articulos.xls` Excel files and seeds the MySQL database with locations, responsible persons, and inventory items.
+  </Step>
+  <Step title="Public lookup">
+    Department members visit the web app, search their name to find their assigned locations, browse items per location, and submit revision comments.
+  </Step>
+  <Step title="Admin oversight">
+    Administrators log in with a username and password to receive a JWT token, then use the dashboard to search responsables or locations and review the full revision history for any location.
+  </Step>
+</Steps>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Live Responsible Search" icon="magnifying-glass">
+    Debounced autocomplete search lets department members find themselves by name in real time.
+  </Card>
+  <Card title="Location & Item Browsing" icon="boxes-stacked">
+    Navigate from a responsible person down to their assigned locations and the items within each one.
+  </Card>
+  <Card title="Revision Tracking" icon="clipboard-check">
+    Any user can submit a timestamped revision comment for a location. Admins can view the full revision history.
+  </Card>
+  <Card title="Excel Data Import" icon="file-excel">
+    Inventory data is loaded automatically from Excel files on server startup — no manual SQL imports required.
+  </Card>
+  <Card title="JWT Authentication" icon="lock">
+    The admin panel is protected with Flask-JWT-Extended. Tokens expire after a configurable number of days.
+  </Card>
+  <Card title="CORS-Enabled API" icon="arrows-left-right">
+    The Flask backend is configured with Flask-CORS, making it straightforward to deploy the frontend and backend on separate origins.
+  </Card>
+</CardGroup>

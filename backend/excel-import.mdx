@@ -1,0 +1,74 @@
+---
+title: "Importing Inventory Data from Excel"
+sidebarTitle: "Excel Import"
+description: "Understand how Goods Inventory auto-imports responsible persons, locations, and items from areas.xls and articulos.xls on server startup."
+---
+
+When the Flask server starts, it automatically reads two Excel files and populates the MySQL database with responsible persons, locations, and inventory items. This removes the need for manual data entry and makes the initial setup reproducible from source files.
+
+## How it works
+
+`app/controllers/excel_loader.py` exports a single public function:
+
+```python
+load_excel_data(area_excel, articulos_excel)
+```
+
+It is called **once** during `create_app()`, inside the active Flask application context, immediately after `db.create_all()`. The function receives the paths to both Excel files and processes them in order — areas first, then articles — so that location records exist before items are linked to them.
+
+## areas.xls
+
+This file defines the physical locations and their responsible persons.
+
+**Expected format:**
+
+- Column headers are on **row 5** (`header=4` in pandas, zero-indexed).
+- Required columns: `Responsable(s)`, `Ubicación`, `Descripción`.
+- Any row with a `NaN` value in one of those columns is silently skipped.
+- For each valid row the loader searches for an existing `Responsible` record by name. If none is found, a new record is created. It then creates or updates the corresponding `Location`.
+
+```python excel_loader.py
+df_area = pd.read_excel(area_excel, header=4)
+df_area.columns = df_area.columns.str.strip()
+df_area = df_area.dropna(subset=['Responsable(s)', 'Ubicación', 'Descripción'])
+
+for _, row in df_area.iterrows():
+    responsable_name = str(row['Responsable(s)']).strip().replace("*", " ")
+    ubicacion_num = int(row['Ubicación'])
+    descripcion = str(row['Descripción']).strip()
+    # find-or-create Responsible, then Location
+```
+
+## articulos.xls
+
+This file lists the individual inventory items.
+
+**Expected format:**
+
+- Column headers are on **row 7** (`header=6` in pandas, zero-indexed).
+- Required columns: `NO.CUENTA`, `UBICA`, `DESCRIPCION`.
+- Any row with a `NaN` value in one of those columns is silently skipped.
+- Items whose `UBICA` value does not match a known `Location` record are silently skipped — the location data in `areas.xls` must be loaded first.
+- `NO.CUENTA` is stored as a **string** containing only the integer portion of the value (the decimal part, if any, is discarded by splitting on `.`).
+
+```python excel_loader.py
+df_articulos = pd.read_excel(articulos_excel, header=6)
+df_articulos.columns = df_articulos.columns.str.strip()
+df_articulos = df_articulos.dropna(subset=['NO.CUENTA', 'UBICA', 'DESCRIPCION'])
+
+for _, row in df_articulos.iterrows():
+    no_cuenta = str(row['NO.CUENTA']).split('.')[0]
+    ubicacion = int(row['UBICA'])
+    descripcion = str(row['DESCRIPCION']).strip()
+    location = Location.query.filter_by(number_location=ubicacion).first()
+    if not location:
+        continue  # skip items with no matching location
+```
+
+## Idempotency
+
+`load_excel_data` is safe to call on every server startup. Throughout both import loops, the loader uses **find-or-create** logic: it queries the database for an existing record before inserting a new one, and updates fields on existing records to match the current file contents. No duplicate rows are created across restarts.
+
+<Tip>
+  To replace the inventory data, update `areas.xls` and `articulos.xls` in the `app/data/` directory and restart the server. Existing records in the database will be updated to reflect the new file contents.
+</Tip>
