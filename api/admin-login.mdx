@@ -1,7 +1,7 @@
 ---
-title: "POST /api/login — Admin Login"
+title: "Admin Login — POST /api/login API Endpoint Reference"
 sidebarTitle: "Admin Login"
-description: "POST /api/login — authenticate as an admin user and receive a JWT access token. Pass name and password in the JSON body."
+description: "Authenticate as an admin user with POST /api/login. Submit name and password to receive a signed JWT access token for all protected admin endpoints."
 ---
 
 The login endpoint authenticates admin users by checking the `admin` table. On success it returns a short-lived JWT access token that must be included in all subsequent admin API calls.

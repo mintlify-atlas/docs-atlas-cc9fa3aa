@@ -1,7 +1,7 @@
 ---
-title: "GET /api/admin/locations/{id}/revisions"
+title: "Admin Revision History — GET Location Revisions Endpoint"
 sidebarTitle: "Admin Revisions"
-description: "GET /api/admin/locations/{id_location}/revisions — JWT-protected endpoint returning all revision records for a location, sorted newest first."
+description: "JWT-protected GET /api/admin/locations/{id}/revisions returns all revision records for a location sorted by date_time_revision descending (newest first)."
 ---
 
 This endpoint returns the complete revision history for a specific location, sorted by `date_time_revision` descending (newest first). It is used by the admin location-detail view to show the audit trail of all inspections carried out at that location.

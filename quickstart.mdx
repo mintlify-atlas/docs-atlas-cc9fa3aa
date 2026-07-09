@@ -1,5 +1,5 @@
 ---
-title: "Get Started with Goods Inventory"
+title: "Goods Inventory Quickstart: Backend and Frontend Setup"
 sidebarTitle: "Quickstart"
 description: "Set up the Goods Inventory Flask backend and React frontend locally in under 10 minutes, from cloning the repo to browsing live inventory data."
 ---
@@ -67,7 +67,7 @@ This guide walks you through running the complete Goods Inventory stack on your 
     VITE_API_URL=http://localhost:5000
     ```
 
-    Vite exposes this value to the application as `import.meta.env.VITE_API_URL`. The `src/config/api.js` file reads it to configure the `axios` base URL used by every API call.
+    Vite exposes this value to the application as `import.meta.env.VITE_API_URL`. The `src/config/api.js` file re-exports it as `API_URL`, which every component imports when making `fetch` calls to the Flask backend.
 
     Start the Vite development server:
 

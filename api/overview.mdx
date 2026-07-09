@@ -1,5 +1,5 @@
 ---
-title: "Goods Inventory REST API Overview"
+title: "Goods Inventory Flask API: Base URL and All Endpoints"
 sidebarTitle: "Overview"
 description: "Overview of the Goods Inventory Flask REST API — base URL, authentication, response format, and the full list of public and admin endpoints."
 ---
@@ -56,7 +56,7 @@ No authentication required.
 |--------|------|-------------|
 | `GET` | `/api/responsables/buscar` | Search responsible persons by name |
 | `GET` | `/api/ubicaciones/{responsable_id}` | Get locations for a responsible person |
-| `GET` | `/api/items/{ubicacion_id}` | Get items at a location |
+| `GET` | `/api/items/{ubicacionId}` | Get items at a location |
 | `POST` | `/api/revisiones` | Submit a revision comment |
 | `POST` | `/api/login` | Admin login, returns JWT |
 

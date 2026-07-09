@@ -1,7 +1,7 @@
 ---
-title: "GET /api/admin/responsables/{id}/ubicaciones"
+title: "Admin Locations by Responsible — GET Endpoint Reference"
 sidebarTitle: "Admin Locations"
-description: "GET /api/admin/responsables/{id}/ubicaciones — JWT-protected endpoint that returns all locations assigned to a specific responsible person."
+description: "JWT-protected GET /api/admin/responsables/{id}/ubicaciones returns a responsible person's name and all their assigned locations via Location.to_dict()."
 ---
 
 This endpoint returns a responsible person's name together with the full list of locations assigned to them. It is used by the admin dashboard to populate the location list when drilling into a specific responsible person.
@@ -104,7 +104,7 @@ curl "http://localhost:5000/api/admin/responsables/1/ubicaciones" \
 
 ### 404 — Responsible Person Not Found
 
-Returned when no record matching `responsable_id` exists in the `admin` table.
+Returned when no record matching `responsable_id` exists in the `responsible` table.
 
 ```json
 { "error": "Responsable no encontrado" }

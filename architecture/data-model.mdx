@@ -1,5 +1,5 @@
 ---
-title: "Data Model: Entities and Relationships"
+title: "Goods Inventory Data Model: Entities and Relationships"
 sidebarTitle: "Data Model"
 description: "Understand the five SQLAlchemy models in Goods Inventory — Admin, Responsible, Location, Item, and Revision — and how they relate to each other."
 ---
@@ -92,7 +92,7 @@ Records a single inspection or audit event for a location, capturing when it hap
   Optional free-text notes recorded during the revision.
 </ParamField>
 
-**Relationship:** A `Revision` belongs to one `Location`. The back-reference is populated by the `cascade="all, delete-orphan"` relationship defined on the `Location` model.
+**Relationship:** A `Revision` belongs to one `Location`. The `location` attribute uses `back_populates='revisions'` to match the `revisions` relationship defined on the `Location` model, forming a bidirectional link.
 
 ---
 

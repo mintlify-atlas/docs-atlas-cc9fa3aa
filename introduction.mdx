@@ -1,5 +1,5 @@
 ---
-title: "Goods Inventory: What It Is and How It Works"
+title: "Goods Inventory: Architecture, Entities, and Tech Stack"
 sidebarTitle: "Introduction"
 description: "Learn what Goods Inventory does, who it is for, and how its React frontend and Flask backend work together to manage department inventory."
 ---
@@ -38,7 +38,7 @@ Goods Inventory is designed for two distinct audiences, each with their own entr
     All inventory data — admins, responsibles, locations, items, and revisions — is persisted in a **MySQL** relational database. The schema is created automatically by SQLAlchemy on first startup, and seed data is imported from bundled Excel files.
   </Card>
   <Card title="React + Vite" icon="browser">
-    The frontend is a **React 19** single-page application scaffolded with **Vite** for fast development and optimized production builds. It talks to the Flask API via `axios`, with the base URL configured through a Vite environment variable.
+    The frontend is a **React 19** single-page application scaffolded with **Vite** for fast development and optimized production builds. It talks to the Flask API using the native `fetch` API, with the base URL configured through a Vite environment variable.
   </Card>
   <Card title="Tailwind CSS + Flowbite" icon="paintbrush">
     All UI components are styled with **Tailwind CSS** utility classes. **Flowbite** provides ready-made accessible components — modals, tables, badges, and forms — that keep the interface consistent without custom CSS overhead.

@@ -1,7 +1,7 @@
 ---
-title: "System Architecture of Goods Inventory"
+title: "Goods Inventory System Architecture and Tech Stack"
 sidebarTitle: "Overview"
-description: "Explore how the React frontend, Flask REST API, and MySQL database are structured and communicate in the Goods Inventory system."
+description: "Explore how the React SPA, Flask REST API, and MySQL database are structured, layered, and communicate in the Goods Inventory application."
 ---
 
 Goods Inventory follows a classic three-tier architecture — a React SPA (single-page application) in the browser, a Flask REST API as the middle tier, and a MySQL database as persistent storage. Each tier has a clearly defined responsibility: the frontend handles user interaction and state, the API enforces business logic and authentication, and the database provides durable, relational storage for all inventory data.
@@ -53,11 +53,16 @@ def create_app():
          expose_headers=["Authorization"])
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{name}:{password}@{server}/{database}"
     app.config['JWT_SECRET_KEY'] = jwt_secret_key
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=jwt_expires_days)
-    ...
+
+    jwt = JWTManager(app)
+    db.init_app(app)
+
     with app.app_context():
         db.create_all()
         load_excel_data("app/data/areas.xls", "app/data/articulos.xls")
+
     register_blueprints(app)
     return app
 ```
@@ -75,7 +80,7 @@ These endpoints are accessible without a JWT token and power the read-only publi
 | `GET` | `/api/responsables/buscar` | Search for responsible parties by name |
 | `GET` | `/api/ubicaciones/{id}` | Retrieve locations for a given responsible |
 | `GET` | `/api/items/{id}` | Retrieve items assigned to a location |
-| `GET` | `/api/revisiones` | List revision records |
+| `POST` | `/api/revisiones` | Submit a new revision record |
 
 ### Admin blueprint (JWT-protected)
 
@@ -87,8 +92,8 @@ These endpoints require a valid `Authorization: Bearer <token>` header and are u
 | `GET` | `/api/admin/responsables/buscar` | Admin-scoped responsible search |
 | `GET` | `/api/admin/ubicaciones/buscar` | Admin-scoped location search |
 | `GET` | `/api/admin/responsables/{id}/ubicaciones` | List locations for a specific responsible (admin view) |
-| `PUT` / `DELETE` | `/api/admin/items/{id}` | Modify or remove an item |
-| `GET` / `POST` | `/api/admin/locations/{id}/revisions` | List or create revisions for a location |
+| `GET` | `/api/admin/items/{id}` | Retrieve items assigned to a location (admin view) |
+| `GET` | `/api/admin/locations/{id}/revisions` | List all revisions for a location (admin view) |
 
 ## Frontend routing
 
